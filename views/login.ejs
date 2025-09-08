@@ -1,0 +1,194 @@
+<%- contentFor('body') %>
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-sign-in-alt"></i> Đăng nhập</h4>
+            </div>
+            <div class="card-body">
+                <!-- Hiển thị lỗi từ server -->
+                <div id="serverErrors" class="alert alert-danger d-none mb-3">
+                    <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i> Lỗi đăng nhập</h6>
+                    <hr>
+                    <ul id="errorList" class="mb-0 ps-3"></ul>
+                </div>
+                
+                <form id="loginForm" action="/api/auth/login" method="post" novalidate>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    
+                    <!-- Tên đăng nhập -->
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+
+                    <!-- Mật khẩu -->
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Mật khẩu <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="password" name="password" required>
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="invalid-feedback"></div>
+                    </div>
+
+                    <!-- Ghi nhớ đăng nhập -->
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">
+                        <label class="form-check-label" for="rememberMe">Ghi nhớ đăng nhập</label>
+                    </div>
+
+                    <!-- Nút đăng nhập -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="loginButton">
+                            <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Quên mật khẩu -->
+                <div class="text-center mt-3">
+                    <a href="/forgot-password" class="text-decoration-none">Quên mật khẩu?</a>
+                </div>
+            </div>
+            <div class="card-footer text-center">
+                <p class="mb-0">Chưa có tài khoản? <a href="/register">Đăng ký</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // Toggle password visibility
+        $('#togglePassword').on('click', function() {
+            const passwordInput = $('#password');
+            const type = passwordInput.attr('type') === 'password' ? 'text' : 'password';
+            passwordInput.attr('type', type);
+            $(this).find('i').toggleClass('fa-eye fa-eye-slash');
+        });
+        
+        // Khởi tạo validation cho form đăng nhập
+        $('#loginForm').validate({
+            // Quy tắc validation
+            rules: {
+                username: {
+                    required: true
+                },
+                password: {
+                    required: true
+                }
+            },
+            
+            // Thông báo lỗi tùy chỉnh
+            messages: {
+                username: {
+                    required: 'Vui lòng nhập tên đăng nhập'
+                },
+                password: {
+                    required: 'Vui lòng nhập mật khẩu'
+                }
+            },
+            
+            // Xử lý khi form hợp lệ
+            submitHandler: function(form) {
+                // Ẩn thông báo lỗi từ server
+                $('#serverErrors').addClass('d-none');
+                $('#errorList').empty();
+                
+                // Lấy dữ liệu form
+                const formData = $(form).serializeArray();
+                const data = {};
+                formData.forEach(item => {
+                    data[item.name] = item.value;
+                });
+                
+                // Gửi request AJAX
+                $.ajax({
+                    url: '/api/auth/login',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    headers: {
+                        'CSRF-Token': $('input[name="_csrf"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            window.location.href = '/';
+                        } else {
+                            handleServerErrors(response);
+                        }
+                    },
+                    error: function(xhr) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            handleServerErrors(response);
+                        } catch (e) {
+                            showAlert('danger', 'Đã xảy ra lỗi. Vui lòng thử lại sau.');
+                        }
+                    }
+                });
+                
+                return false; // Ngăn form submit mặc định
+            }
+        });
+        
+        // Xử lý lỗi từ server
+        function handleServerErrors(response) {
+            if (response.errors && Array.isArray(response.errors) && response.errors.length > 0) {
+                // Xóa các lỗi cũ
+                $('#errorList').empty();
+                
+                // Thêm từng lỗi vào danh sách và hiển thị lỗi trên form
+                response.errors.forEach(error => {
+                    // Thêm vào danh sách lỗi
+                    $('<li>').text(error).appendTo('#errorList');
+                    
+                    // Hiển thị lỗi trên trường tương ứng
+                    if (error.includes('Tên đăng nhập')) {
+                        $('#username').addClass('is-invalid');
+                        $('#username').next('.invalid-feedback').text(error).show();
+                    } else if (error.includes('Mật khẩu')) {
+                        $('#password').addClass('is-invalid');
+                        $('#password').closest('.input-group').next('.invalid-feedback').text(error).show();
+                    }
+                });
+                
+                // Hiển thị alert box
+                $('#serverErrors').removeClass('d-none');
+                
+                // Hiệu ứng nhấp nháy để thu hút sự chú ý
+                $('#serverErrors').css('animation', 'none');
+                setTimeout(() => {
+                    $('#serverErrors').css('animation', 'shake 0.6s cubic-bezier(.36,.07,.19,.97) both');
+                }, 10);
+            } else {
+                // Nếu không có lỗi cụ thể, hiển thị thông báo chung
+                showAlert('danger', response.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
+            }
+        }
+        
+        // Hiển thị thông báo
+        function showAlert(type, message) {
+            const alertContainer = $('#alertContainer');
+            const alert = $('<div>')
+                .addClass(`alert alert-${type} alert-dismissible fade show`)
+                .html(`
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `);
+            
+            alertContainer.append(alert);
+            
+            // Tự động ẩn sau 5 giây
+            setTimeout(() => {
+                alert.removeClass('show');
+                setTimeout(() => alert.remove(), 150);
+            }, 5000);
+        }
+    });
+</script>

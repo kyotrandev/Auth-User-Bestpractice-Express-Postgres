@@ -1,0 +1,63 @@
+<% /* Main content */ %>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-shield-alt"></i> Hệ thống quản lý người dùng</h4>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-user-shield fa-4x text-primary mb-3"></i>
+                    <p class="lead">Bài tập môn Thương Mại Điện Tử</p>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-body text-center">
+                                <i class="fas fa-lock fa-3x text-primary mb-3"></i>
+                                <h5>Xác thực an toàn</h5>
+                                <p>Hệ thống xác thực đa lớp với mật khẩu mạnh</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-body text-center">
+                                <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+                                <h5>Bảo vệ dữ liệu</h5>
+                                <p>Mã hóa dữ liệu bằng bcrypt + salt và bảo vệ thông tin người dùng</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-body text-center">
+                                <i class="fas fa-user-check fa-3x text-primary mb-3"></i>
+                                <h5>Quản lý quyền</h5>
+                                <p>Phân quyền chi tiết và kiểm soát truy cập</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <% if (typeof user === 'undefined' || !user) { %>
+                        <a href="/register" class="btn btn-primary btn-lg me-2">
+                            <i class="fas fa-user-plus"></i> Đăng ký
+                        </a>
+                        <a href="/login" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                        </a>
+                    <% } else { %>
+                        <a href="/profile" class="btn btn-primary btn-lg">
+                            <i class="fas fa-user"></i> Xem thông tin cá nhân
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+ 

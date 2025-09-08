@@ -1,0 +1,66 @@
+/* Main Styles */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Card styling */
+.card {
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    border: none;
+}
+
+.card-header {
+    border-bottom: none;
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+/* Form styling */
+.form-control:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    border-color: #86b7fe;
+}
+
+/* Password strength indicator */
+.password-strength {
+    margin-top: 10px;
+}
+
+.progress {
+    height: 5px;
+    border-radius: 3px;
+}
+
+/* Avatar image */
+.avatar-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e9ecef;
+}
+
+/* Footer styling */
+footer {
+    border-top: 1px solid #e9ecef;
+}
+
+/* Utility classes */
+.shadow {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Animation for alerts */
+.alert {
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
