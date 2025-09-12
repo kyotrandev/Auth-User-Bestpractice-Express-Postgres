@@ -10,6 +10,7 @@ const expressLayouts = require('express-ejs-layouts');
 require('dotenv').config();
 
 const userRoutes = require('./routes/userRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const { pool, initPool } = require('./config/database');
 
 const app = express();
@@ -19,7 +20,35 @@ const PORT = process.env.PORT || 3000;
 let dbConnected = false;
 
 // Security middleware
-app.use(helmet());
+const isDev = process.env.NODE_ENV !== 'production';
+app.use(helmet({
+    contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+            defaultSrc: ["'self'"],
+            // Allow CDN scripts and inline scripts for EJS inline handlers in dev
+            scriptSrc: [
+                "'self'",
+                ...(isDev ? ["'unsafe-inline'", "'unsafe-eval'"] : []),
+                'https://code.jquery.com',
+                'https://cdn.jsdelivr.net',
+                'https://cdnjs.cloudflare.com'
+            ],
+            styleSrc: [
+                "'self'",
+                ...(isDev ? ["'unsafe-inline'"] : []),
+                'https://cdn.jsdelivr.net',
+                'https://cdnjs.cloudflare.com'
+            ],
+            imgSrc: ["'self'", 'data:', 'blob:'],
+            fontSrc: ["'self'", 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net', 'data:'],
+            connectSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
+            objectSrc: ["'none'"],
+            baseUri: ["'self'"]
+        }
+    },
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 app.use(cors());
 
 // Rate limiting
@@ -35,8 +64,8 @@ const authLimiter = rateLimit({
     message: 'Quá nhiều lần đăng nhập thất bại, vui lòng thử lại sau 15 phút.'
 });
 
-app.use(limiter);
-app.use('/api/auth', authLimiter);
+// app.use(limiter);
+// app.use('/api/auth', authLimiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -74,6 +103,8 @@ app.use(csrfProtection);
 
 // Routes
 app.use('/api', userRoutes);
+app.use('/admin', adminRoutes); // Mount admin routes với prefix /admin
+
 
 // Serve HTML pages
 app.get('/', (req, res) => {
@@ -127,6 +158,15 @@ app.get('/profile', (req, res) => {
     });
 });
 
+// Trang dashboard admin
+app.get('/admin', (req, res) => {
+    if (!req.session.user) {
+        return res.redirect('/login');
+    }
+    res.redirect('/admin/dashboard');
+});
+
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
@@ -172,7 +212,7 @@ const startServer = async () => {
         dbConnected = await initPool();
         
         if (!dbConnected) {
-            console.warn('Khởi động server mà không có kết nối database. Một số chức năng có thể không hoạt động.');
+            console.warn('DB Connection Error');
         }
         
         app.listen(PORT, () => {

@@ -13,6 +13,10 @@ class User {
         this.updated_at = userData.updated_at;
         this.last_login = userData.last_login;
         this.is_active = userData.is_active;
+        this.role_id = userData.role_id;
+        this.user_type = userData.user_type;
+        this.role_name = userData.role_name;
+        this.role_display_name = userData.role_display_name;
     }
 
     /**
@@ -27,12 +31,6 @@ class User {
      * Compare password with hash
      */
     static async comparePassword(password, hash) {
-        // Nếu không có database, cho phép đăng nhập với mật khẩu mặc định cho mục đích kiểm thử
-        if (password === 'StrongPassword123!' && 
-            hash === '$2a$12$R8jF0zRzaW.vWi.Kk2cmfOWzC8HOY0mHRGDK2ayAKn5KlbzOqI.7C') {
-            return true;
-        }
-        
         return await bcrypt.compare(password, hash);
     }
 
@@ -76,11 +74,14 @@ class User {
     static async findByUsername(username) {
         try {
             const sqlQuery = `
-                SELECT id, username, password_hash, phone, address, 
-                       created_at, updated_at, last_login, is_active, 
-                       password_created_at, failed_login_attempts, locked_until
-                FROM users 
-                WHERE username = $1 AND is_active = true
+                SELECT u.id, u.username, u.email, u.password_hash, u.phone, u.address, 
+                       u.created_at, u.updated_at, u.last_login, u.is_active, 
+                       u.password_created_at, u.failed_login_attempts, u.locked_until,
+                       u.role_id, u.user_type, r.name as role_name, r.display_name as role_display_name,
+                       r.permissions as role_permissions
+                FROM users u
+                LEFT JOIN roles r ON u.role_id = r.id
+                WHERE u.username = $1 AND u.is_active = true
             `;
 
             try {
@@ -94,7 +95,7 @@ class User {
                 return result.rows[0];
             } catch (dbError) {
                 console.error('Lỗi truy vấn database:', dbError);
-                
+
                 // Tạo một mock user cho mục đích kiểm thử khi không có database
                 if (username === 'admin' || username === 'test') {
                     console.log('Sử dụng mock user cho mục đích kiểm thử');
@@ -108,7 +109,7 @@ class User {
                         failed_login_attempts: 0
                     };
                 }
-                
+
                 throw dbError;
             }
         } catch (error) {
@@ -139,21 +140,9 @@ class User {
                 return result.rows[0];
             } catch (dbError) {
                 console.error('Lỗi truy vấn database:', dbError);
-                
-                // Tạo một mock user cho mục đích kiểm thử khi không có database
-                if (email === 'admin@example.com' || email === 'test@example.com') {
-                    console.log('Sử dụng mock user cho mục đích kiểm thử');
-                    return {
-                        id: 1,
-                        username: email.split('@')[0],
-                        email: email,
-                        password_hash: '$2a$12$R8jF0zRzaW.vWi.Kk2cmfOWzC8HOY0mHRGDK2ayAKn5KlbzOqI.7C', // StrongPassword123!
-                        is_active: true,
-                        password_created_at: new Date(),
-                        failed_login_attempts: 0
-                    };
-                }
-                
+
+
+
                 throw dbError;
             }
         } catch (error) {
@@ -166,14 +155,16 @@ class User {
      */
     static async findById(id) {
         try {
-            const query = `
-                SELECT id, username, email, phone, address, 
-                       created_at, updated_at, last_login, is_active
-                FROM user_profile 
-                WHERE id = $1
+            const sqlQuery = `
+                SELECT u.id, u.username, u.email, u.phone, u.address, 
+                       u.created_at, u.updated_at, u.last_login, u.is_active,
+                       u.role_id, u.user_type, r.name as role_name, r.display_name as role_display_name
+                FROM users u
+                LEFT JOIN roles r ON u.role_id = r.id
+                WHERE u.id = $1 AND u.is_active = true
             `;
 
-            const result = await pool.query(query, [id]);
+            const result = await pool.query(sqlQuery, [id]);
 
             if (result.rows.length === 0) {
                 return null;
@@ -217,7 +208,7 @@ class User {
                 console.log('Bỏ qua việc tăng số lần đăng nhập thất bại cho tài khoản test');
                 return;
             }
-            
+
             const maxAttempts = parseInt(process.env.MAX_LOGIN_ATTEMPTS) || 5;
             const lockDuration = 15; // minutes
 
@@ -231,7 +222,7 @@ class User {
                     END
                 WHERE id = $1
             `;
-            
+
             try {
                 await query(sqlQuery, [userId, maxAttempts]);
             } catch (dbError) {
@@ -253,13 +244,13 @@ class User {
             if (userId === 1) {
                 return false;
             }
-            
+
             const sqlQuery = `
                 SELECT locked_until 
                 FROM users 
                 WHERE id = $1
             `;
-            
+
             try {
                 const result = await query(sqlQuery, [userId]);
 
@@ -417,6 +408,293 @@ class User {
             const query = 'SELECT id FROM users WHERE email = $1';
             const result = await pool.query(query, [email]);
             return result.rows.length > 0;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Lấy tất cả người dùng với phân trang
+     */
+    static async getAll(options = {}) {
+        try {
+            const { limit = 50, offset = 0, search = '', role_id = null, user_type = null } = options;
+            
+            let sqlQuery = `
+                SELECT u.id, u.username, u.email, u.phone, u.address, 
+                       u.created_at, u.updated_at, u.last_login, u.is_active,
+                       u.role_id, u.user_type, r.name as role_name, r.display_name as role_display_name
+                FROM users u
+                LEFT JOIN roles r ON u.role_id = r.id
+                WHERE u.is_active = true
+            `;
+            
+            const values = [];
+            let paramCount = 0;
+
+            // Tìm kiếm theo username hoặc email
+            if (search) {
+                paramCount++;
+                sqlQuery += ` AND (
+                    LOWER(u.username) LIKE LOWER($${paramCount}) OR 
+                    LOWER(u.email) LIKE LOWER($${paramCount})
+                )`;
+                values.push(`%${search}%`);
+            }
+
+            // Lọc theo vai trò
+            if (role_id) {
+                paramCount++;
+                sqlQuery += ` AND u.role_id = $${paramCount}`;
+                values.push(role_id);
+            }
+
+            // Lọc theo loại người dùng
+            if (user_type) {
+                paramCount++;
+                sqlQuery += ` AND u.user_type = $${paramCount}`;
+                values.push(user_type);
+            }
+
+            sqlQuery += ` ORDER BY u.created_at DESC`;
+            
+            // Phân trang
+            if (limit) {
+                paramCount++;
+                sqlQuery += ` LIMIT $${paramCount}`;
+                values.push(limit);
+            }
+            
+            if (offset) {
+                paramCount++;
+                sqlQuery += ` OFFSET $${paramCount}`;
+                values.push(offset);
+            }
+
+            const result = await pool.query(sqlQuery, values);
+            return result.rows.map(row => new User(row));
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Đếm tổng số người dùng
+     */
+    static async count(options = {}) {
+        try {
+            const { search = '', role_id = null, user_type = null } = options;
+            
+            let sqlQuery = 'SELECT COUNT(*) as total FROM users WHERE is_active = true';
+            const values = [];
+            let paramCount = 0;
+
+            if (search) {
+                paramCount++;
+                sqlQuery += ` AND (
+                    LOWER(username) LIKE LOWER($${paramCount}) OR 
+                    LOWER(email) LIKE LOWER($${paramCount})
+                )`;
+                values.push(`%${search}%`);
+            }
+
+            if (role_id) {
+                paramCount++;
+                sqlQuery += ` AND role_id = $${paramCount}`;
+                values.push(role_id);
+            }
+
+            if (user_type) {
+                paramCount++;
+                sqlQuery += ` AND user_type = $${paramCount}`;
+                values.push(user_type);
+            }
+
+            const result = await pool.query(sqlQuery, values);
+            return parseInt(result.rows[0].total);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Cập nhật thông tin người dùng (dành cho admin)
+     */
+    static async updateUser(userId, updateData) {
+        try {
+            const { username, email, phone, address, role_id, user_type, is_active } = updateData;
+            
+            const sqlQuery = `
+                UPDATE users 
+                SET username = COALESCE($2, username),
+                    email = COALESCE($3, email),
+                    phone = COALESCE($4, phone),
+                    address = COALESCE($5, address),
+                    role_id = COALESCE($6, role_id),
+                    user_type = COALESCE($7, user_type),
+                    is_active = COALESCE($8, is_active),
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = $1
+                RETURNING id, username, email, phone, address, role_id, user_type, is_active, updated_at
+            `;
+            
+            const values = [userId, username, email, phone, address, role_id, user_type, is_active];
+            const result = await pool.query(sqlQuery, values);
+            
+            if (result.rows.length === 0) {
+                return null;
+            }
+            
+            return new User(result.rows[0]);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Tạo người dùng mới (dành cho admin)
+     */
+    static async createUser(userData) {
+        try {
+            const { username, email, password, phone, address, role_id, user_type } = userData;
+
+            const hashedPassword = await this.hashPassword(password);
+
+            const sqlQuery = `
+                INSERT INTO users (username, email, password_hash, phone, address, role_id, user_type, password_created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+                RETURNING id, username, email, phone, address, role_id, user_type, created_at, is_active
+            `;
+
+            const values = [username, email, hashedPassword, phone, address, role_id, user_type];
+            const result = await pool.query(sqlQuery, values);
+
+            return new User(result.rows[0]);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Xóa người dùng (soft delete)
+     */
+    static async deleteUser(userId) {
+        try {
+            const sqlQuery = `
+                UPDATE users 
+                SET is_active = false, updated_at = CURRENT_TIMESTAMP
+                WHERE id = $1
+                RETURNING id
+            `;
+            
+            const result = await pool.query(sqlQuery, [userId]);
+            return result.rows.length > 0;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Đặt lại mật khẩu cho người dùng (dành cho admin)
+     */
+    static async resetUserPassword(userId, newPassword) {
+        try {
+            const hashedPassword = await this.hashPassword(newPassword);
+
+            const sqlQuery = `
+                UPDATE users 
+                SET password_hash = $2, 
+                    password_created_at = CURRENT_TIMESTAMP,
+                    failed_login_attempts = 0,
+                    locked_until = NULL,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = $1
+                RETURNING id
+            `;
+
+            const result = await pool.query(sqlQuery, [userId, hashedPassword]);
+            return result.rows.length > 0;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Mở khóa tài khoản người dùng
+     */
+    static async unlockUser(userId) {
+        try {
+            const sqlQuery = `
+                UPDATE users 
+                SET failed_login_attempts = 0,
+                    locked_until = NULL,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = $1
+                RETURNING id
+            `;
+
+            const result = await pool.query(sqlQuery, [userId]);
+            return result.rows.length > 0;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Lấy quyền của người dùng
+     */
+    static async getUserPermissions(userId) {
+        try {
+            const sqlQuery = `
+                SELECT r.permissions, r.name as role_name
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                WHERE u.id = $1 AND u.is_active = true 
+            `;
+            
+            const result = await pool.query(sqlQuery, [userId]);
+            
+            // if (result.rows.length === 0) {
+            //     return { permissions: 0, role_name: null };
+            // }
+            
+            return result.rows[0];
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Kiểm tra người dùng có quyền cụ thể không
+     */
+    static async hasPermission(userId, requiredPermission) {
+        try {
+            const userPermissions = await this.getUserPermissions(userId);
+            return (userPermissions.permissions & requiredPermission) === requiredPermission;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    /**
+     * Lấy thống kê người dùng theo vai trò
+     */
+    static async getUserStatistics() {
+        try {
+            const sqlQuery = `
+                SELECT 
+                    r.name as role_name,
+                    r.display_name as role_display_name,
+                    COUNT(u.id) as user_count
+                FROM roles r
+                LEFT JOIN users u ON r.id = u.role_id AND u.is_active = true
+                WHERE r.is_active = true
+                GROUP BY r.id, r.name, r.display_name
+                ORDER BY user_count DESC, r.display_name
+            `;
+            
+            const result = await pool.query(sqlQuery);
+            return result.rows;
         } catch (error) {
             throw error;
         }

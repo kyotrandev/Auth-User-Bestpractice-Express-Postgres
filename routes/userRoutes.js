@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const UserController = require('../controllers/userController');
-const { requireAuth, requireGuest, logUserActivity } = require('../middleware/auth');
+const { requireAuth } = require('../middleware/permission');
 const {
     validateRegistration,
     validateLogin,
@@ -14,8 +14,7 @@ const {
     sanitizeInput
 } = require('../middleware/validators');
 
-// // Apply user activity logging to all routes
-// router.use(logUserActivity);
+// User routes
 
 // Auth routes (không cần đăng nhập)
 router.post('/auth/register',

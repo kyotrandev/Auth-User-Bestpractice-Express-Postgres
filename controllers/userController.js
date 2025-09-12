@@ -126,7 +126,11 @@ class UserController {
             req.session.user = {
                 id: user.id,
                 username: user.username,
-                email: user.email
+                email: user.email,
+                role_id: user.role_id,
+                user_type: user.user_type,
+                role_name: user.role_name,
+                role_permissions: user.role_permissions
             };
 
             res.status(200).json({
@@ -141,7 +145,7 @@ class UserController {
 
         } catch (error) {
             console.error('Lỗi đăng nhập:', error);
-            
+
             // Kiểm tra lỗi kết nối database
             if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
                 return res.status(500).json({
@@ -150,7 +154,7 @@ class UserController {
                     errors: ['Lỗi kết nối cơ sở dữ liệu. Hãy đảm bảo PostgreSQL đang chạy.']
                 });
             }
-            
+
             res.status(500).json({
                 success: false,
                 message: 'Có lỗi xảy ra khi đăng nhập'
@@ -248,7 +252,7 @@ class UserController {
             const { token, user } = result;
 
             // Cấu hình email
-            const transporter = nodemailer.createTransporter({
+            const transporter = nodemailer.createTransport({
                 host: process.env.EMAIL_HOST,
                 port: process.env.EMAIL_PORT,
                 secure: false,

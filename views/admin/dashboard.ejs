@@ -1,0 +1,445 @@
+<%- contentFor('body') %>
+
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-tachometer-alt"></i> Dashboard Admin</h2>
+            <div class="text-muted">
+                <i class="fas fa-user"></i> Xin chào, <%= user.username %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Thống kê tổng quan -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Tổng số người dùng
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalUsers">
+                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Sinh viên
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalStudents">
+                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-graduation-cap fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Thủ thư
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalLibrarians">
+                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-book fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Cán bộ & Giảng viên
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalStaff">
+                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Menu quản lý -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-cogs"></i> Menu quản lý</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card h-100 border-primary">
+                            <div class="card-body text-center">
+                                <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                                <h5 class="card-title">Quản lý người dùng</h5>
+                                <p class="card-text">Thêm, sửa, xóa người dùng và phân quyền</p>
+                                <a href="/admin/users" class="btn btn-primary">
+                                    <i class="fas fa-arrow-right"></i> Truy cập
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card h-100 border-success">
+                            <div class="card-body text-center">
+                                <i class="fas fa-user-graduate fa-3x text-success mb-3"></i>
+                                <h5 class="card-title">Quản lý sinh viên</h5>
+                                <p class="card-text">Thêm sinh viên mới vào hệ thống</p>
+                                <button class="btn btn-success" onclick="openAddUserModal('student')">
+                                    <i class="fas fa-plus"></i> Thêm sinh viên
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card h-100 border-info">
+                            <div class="card-body text-center">
+                                <i class="fas fa-book-reader fa-3x text-info mb-3"></i>
+                                <h5 class="card-title">Quản lý thủ thư</h5>
+                                <p class="card-text">Thêm thủ thư mới vào hệ thống</p>
+                                <button class="btn btn-info" onclick="openAddUserModal('librarian')">
+                                    <i class="fas fa-plus"></i> Thêm thủ thư
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card h-100 border-warning">
+                            <div class="card-body text-center">
+                                <i class="fas fa-user-tie fa-3x text-warning mb-3"></i>
+                                <h5 class="card-title">Quản lý cán bộ</h5>
+                                <p class="card-text">Thêm cán bộ nhân viên mới</p>
+                                <button class="btn btn-warning" onclick="openAddUserModal('staff')">
+                                    <i class="fas fa-plus"></i> Thêm cán bộ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card h-100 border-secondary">
+                            <div class="card-body text-center">
+                                <i class="fas fa-chalkboard-teacher fa-3x text-secondary mb-3"></i>
+                                <h5 class="card-title">Quản lý giảng viên</h5>
+                                <p class="card-text">Thêm giảng viên mới vào hệ thống</p>
+                                <button class="btn btn-secondary" onclick="openAddUserModal('teacher')">
+                                    <i class="fas fa-plus"></i> Thêm giảng viên
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card h-100 border-dark">
+                            <div class="card-body text-center">
+                                <i class="fas fa-chart-bar fa-3x text-dark mb-3"></i>
+                                <h5 class="card-title">Thống kê hệ thống</h5>
+                                <p class="card-text">Xem báo cáo và thống kê chi tiết</p>
+                                <button class="btn btn-dark" onclick="loadStatistics()">
+                                    <i class="fas fa-chart-line"></i> Xem thống kê
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal thêm người dùng nhanh -->
+<div class="modal fade" id="quickAddUserModal" tabindex="-1" aria-labelledby="quickAddUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickAddUserModalLabel">
+                    <i class="fas fa-user-plus"></i> <span id="modalTitle">Thêm người dùng mới</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="quickAddUserForm" novalidate>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Tên đăng nhập -->
+                        <div class="col-md-6 mb-3">
+                            <label for="quickUsername" class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="quickUsername" name="username" required
+                                   minlength="3" maxlength="25" pattern="^[a-zA-Z0-9_]+$">
+                            <div class="form-text">3-25 ký tự, chỉ chữ cái, số và dấu gạch dưới</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-md-6 mb-3">
+                            <label for="quickEmail" class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="quickEmail" name="email" required maxlength="255">
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Mật khẩu -->
+                        <div class="col-md-6 mb-3">
+                            <label for="quickPassword" class="form-label">Mật khẩu <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="quickPassword" name="password" required
+                                       minlength="8" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('quickPassword')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">Ít nhất 8 ký tự, bao gồm: chữ hoa, chữ thường, số và ký tự đặc biệt</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Số điện thoại -->
+                        <div class="col-md-6 mb-3">
+                            <label for="quickPhone" class="form-label">Số điện thoại</label>
+                            <input type="tel" class="form-control" id="quickPhone" name="phone"
+                                   pattern="^[0-9]{10,11}$" maxlength="20">
+                            <div class="form-text">10-11 số</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Loại người dùng (ẩn) -->
+                        <input type="hidden" id="quickUserType" name="user_type">
+                        <input type="hidden" id="quickRoleId" name="role_id">
+
+                        <!-- Địa chỉ -->
+                        <div class="col-12 mb-3">
+                            <label for="quickAddress" class="form-label">Địa chỉ</label>
+                            <textarea class="form-control" id="quickAddress" name="address" rows="2" maxlength="500"></textarea>
+                            <div class="form-text">Tối đa 500 ký tự</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> <span id="submitBtnText">Tạo người dùng</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+.text-xs {
+    font-size: 0.7rem;
+}
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+</style>
+
+<script>
+$(document).ready(function() {
+    // Tải thống kê khi trang được load
+    loadDashboardStats();
+
+    // Xử lý form thêm người dùng nhanh
+    $('#quickAddUserForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        if (!this.checkValidity()) {
+            e.stopPropagation();
+            $(this).addClass('was-validated');
+            return;
+        }
+
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+
+        $.ajax({
+            url: '/admin/api/users',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            headers: {
+                'CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#quickAddUserModal').modal('hide');
+                    $('#quickAddUserForm')[0].reset();
+                    $('#quickAddUserForm').removeClass('was-validated');
+                    showAlert('success', 'Thêm người dùng thành công');
+                    loadDashboardStats(); // Cập nhật lại thống kê
+                } else {
+                    showAlert('danger', response.message || 'Không thể thêm người dùng');
+                }
+            },
+            error: function(xhr) {
+                const response = JSON.parse(xhr.responseText);
+                showAlert('danger', response.message || 'Có lỗi xảy ra khi thêm người dùng');
+            }
+        });
+    });
+
+    // Tải thống kê dashboard
+    function loadDashboardStats() {
+        $.ajax({
+            url: '/admin/api/statistics',
+            method: 'GET',
+            headers: {
+                'CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success && response.data.usersByRole) {
+                    const stats = response.data.usersByRole;
+                    
+                    // Tính tổng số người dùng
+                    const total = stats.reduce((sum, stat) => sum + parseInt(stat.count), 0);
+                    $('#totalUsers').text(total);
+
+                    // Tìm và hiển thị số lượng theo từng loại
+                    const studentCount = stats.find(s => s.user_type === 'student')?.count || 0;
+                    const librarianCount = stats.find(s => s.user_type === 'librarian')?.count || 0;
+                    const staffCount = (stats.find(s => s.user_type === 'staff')?.count || 0) + 
+                                     (stats.find(s => s.user_type === 'teacher')?.count || 0);
+
+                    $('#totalStudents').text(studentCount);
+                    $('#totalLibrarians').text(librarianCount);
+                    $('#totalStaff').text(staffCount);
+                } else {
+                    showAlert('warning', 'Không thể tải thống kê');
+                }
+            },
+            error: function(xhr) {
+                console.error('Error loading dashboard stats:', xhr);
+                $('#totalUsers, #totalStudents, #totalLibrarians, #totalStaff').text('--');
+            }
+        });
+    }
+
+    // Mở modal thêm người dùng với loại cụ thể
+    window.openAddUserModal = function(userType) {
+        const userTypeMap = {
+            'student': { 
+                title: 'Thêm sinh viên mới', 
+                roleId: 3,
+                btnText: 'Tạo sinh viên'
+            },
+            'librarian': { 
+                title: 'Thêm thủ thư mới', 
+                roleId: 2,
+                btnText: 'Tạo thủ thư'
+            },
+            'staff': { 
+                title: 'Thêm cán bộ mới', 
+                roleId: 4,
+                btnText: 'Tạo cán bộ'
+            },
+            'teacher': { 
+                title: 'Thêm giảng viên mới', 
+                roleId: 5,
+                btnText: 'Tạo giảng viên'
+            }
+        };
+
+        const config = userTypeMap[userType];
+        if (config) {
+            $('#modalTitle').text(config.title);
+            $('#submitBtnText').text(config.btnText);
+            $('#quickUserType').val(userType);
+            $('#quickRoleId').val(config.roleId);
+            $('#quickAddUserModal').modal('show');
+        }
+    };
+
+    // Toggle password visibility
+    window.togglePassword = function(inputId) {
+        const input = $('#' + inputId);
+        const button = input.next('.input-group').length ? 
+                      input.closest('.input-group').find('button i') : 
+                      input.next('button').find('i');
+        
+        if (input.attr('type') === 'password') {
+            input.attr('type', 'text');
+            button.removeClass('fa-eye').addClass('fa-eye-slash');
+        } else {
+            input.attr('type', 'password');
+            button.removeClass('fa-eye-slash').addClass('fa-eye');
+        }
+    };
+
+    // Tải và hiển thị thống kê chi tiết
+    window.loadStatistics = function() {
+        // Chuyển hướng đến trang quản lý người dùng với tab thống kê
+        window.location.href = '/admin/users';
+    };
+
+    // Hiển thị thông báo
+    function showAlert(type, message) {
+        const alertContainer = $('#alertContainer');
+        const alert = $('<div>')
+            .addClass(`alert alert-${type} alert-dismissible fade show`)
+            .html(`
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `);
+        
+        alertContainer.append(alert);
+        
+        // Tự động ẩn sau 5 giây
+        setTimeout(() => {
+            alert.removeClass('show');
+            setTimeout(() => alert.remove(), 150);
+        }, 5000);
+    }
+});
+</script>

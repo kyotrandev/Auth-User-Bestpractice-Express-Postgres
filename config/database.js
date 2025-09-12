@@ -45,34 +45,34 @@ pool.on('error', (err) => {
 // Hàm query với timeout và retry
 const query = async (text, params, retries = 3) => {
     let lastError;
-    
+
     for (let i = 0; i < retries; i++) {
         try {
             const start = Date.now();
             const res = await pool.query(text, params);
             const duration = Date.now() - start;
-            
+
             // Log slow queries (>100ms)
             if (duration > 100) {
                 console.log('Slow query:', { text, duration, rows: res.rowCount });
             }
-            
+
             return res;
         } catch (err) {
             lastError = err;
-            
+
             // Nếu lỗi là do kết nối, thử lại
             if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === '57P01') {
                 console.log(`Lỗi kết nối database, thử lại lần ${i + 1}/${retries}:`, err.message);
                 await new Promise(resolve => setTimeout(resolve, 1000)); // Đợi 1 giây trước khi thử lại
                 continue;
             }
-            
+
             // Nếu lỗi khác, ném ra ngoài
             throw err;
         }
     }
-    
+
     throw lastError;
 };
 
