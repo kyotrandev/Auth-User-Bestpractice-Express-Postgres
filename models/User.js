@@ -1,14 +1,16 @@
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { pool, query } = require('../config/database');
+const { decodeDangerousChars, encodeDangerousChars } = require('../utils/sanitizer');
 
 class User {
     constructor(userData) {
         this.id = userData.id;
-        this.username = userData.username;
-        this.email = userData.email;
-        this.phone = userData.phone;
-        this.address = userData.address;
+        // Decode data when retrieving from database
+        this.username = userData.username ? decodeDangerousChars(userData.username) : userData.username;
+        this.email = userData.email ? decodeDangerousChars(userData.email) : userData.email;
+        this.phone = userData.phone ? decodeDangerousChars(userData.phone) : userData.phone;
+        this.address = userData.address ? decodeDangerousChars(userData.address) : userData.address;
         this.created_at = userData.created_at;
         this.updated_at = userData.updated_at;
         this.last_login = userData.last_login;
@@ -73,6 +75,9 @@ class User {
      */
     static async findByUsername(username) {
         try {
+            // Encode username for database comparison 
+            const encodedUsername = encodeDangerousChars(username.toLowerCase());
+            
             const sqlQuery = `
                 SELECT u.id, u.username, u.email, u.password_hash, u.phone, u.address, 
                        u.created_at, u.updated_at, u.last_login, u.is_active, 
@@ -86,7 +91,7 @@ class User {
 
             try {
                 // Sử dụng hàm query mới với cơ chế retry
-                const result = await query(sqlQuery, [username]);
+                const result = await query(sqlQuery, [encodedUsername]);
 
                 if (result.rows.length === 0) {
                     return null;

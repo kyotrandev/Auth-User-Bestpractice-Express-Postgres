@@ -1,10 +1,15 @@
 const { body, validationResult } = require('express-validator');
+const { 
+    sanitizeInputData, 
+    encodeDangerousChars, 
+    isSuspiciousInput 
+} = require('../utils/sanitizer');
 
-// Password validation regex
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/;
+// Password validation regex (updated to allow encoded characters)
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&,'".])[A-Za-z\d@$!%*?&,.'"&#x;]{12,}$/;
 
-// Username validation regex
-const usernameRegex = /^[a-zA-Z][a-zA-Z0-9_-]{11,24}$/;
+// Username validation regex (updated to allow encoded characters)
+const usernameRegex = /^[a-zA-Z][a-zA-Z0-9_\-&#x;]*$/;
 
 // Reserved usernames
 const reservedUsernames = [
@@ -197,15 +202,63 @@ const detectBruteForce = (req, res, next) => {
 };
 
 /**
- * Sanitize input to prevent XSS
+ * Advanced sanitization middleware - Layer 2 Security
+ * Sanitizes all input data using custom sanitizer utility
  */
 const sanitizeInput = (req, res, next) => {
-    // Additional sanitization if needed
-    if (req.body.username) {
-        req.body.username = req.body.username.toLowerCase();
+    try {
+        // Define field types for each request body field
+        const fieldTypes = {
+            username: 'username',
+            password: 'password',
+            newPassword: 'password',
+            currentPassword: 'password',
+            confirmPassword: 'password',
+            confirmNewPassword: 'password',
+            email: 'email',
+            phone: 'phone',
+            address: 'text',
+            notes: 'text'
+        };
+
+        // Sanitize all input data
+        const sanitizationResult = sanitizeInputData(req.body, fieldTypes);
+
+        // Log suspicious activity
+        for (const [field, value] of Object.entries(req.body)) {
+            if (value && isSuspiciousInput(value)) {
+                console.warn(`Suspicious input detected from ${req.ip}: ${field} = ${value.substring(0, 50)}...`);
+            }
+        }
+
+        // If sanitization found errors, return them
+        if (!sanitizationResult.isValid) {
+            const errorMessages = [];
+            for (const [field, errors] of Object.entries(sanitizationResult.errors)) {
+                errorMessages.push(...errors);
+            }
+
+            return res.status(400).json({
+                success: false,
+                message: 'Dữ liệu đầu vào chứa nội dung không hợp lệ',
+                errors: errorMessages
+            });
+        }
+
+        // Replace request body with sanitized data
+        req.body = sanitizationResult.sanitizedData;
+
+        // Store original data for logging if needed
+        req.originalBody = { ...req.body };
+
+        next();
+    } catch (error) {
+        console.error('Error in sanitizeInput middleware:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Lỗi xử lý dữ liệu đầu vào'
+        });
     }
- 
-    next();
 };
 
 module.exports = {

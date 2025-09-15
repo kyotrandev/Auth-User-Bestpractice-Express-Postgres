@@ -29,8 +29,8 @@
                         <label for="password" class="form-label">Mật khẩu <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="password" name="password" required>
-                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                <i class="fas fa-eye"></i>
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword" tabindex="-1">
+                                <i class="fas fa-eye" id="togglePasswordIcon"></i>
                             </button>
                         </div>
                         <div class="invalid-feedback"></div>
@@ -62,79 +62,360 @@
     </div>
 </div>
 
+<style>
+    /* Fix z-index issues for password toggle button */
+    .input-group .btn {
+        z-index: 4 !important;
+        position: relative;
+    }
+    
+    .input-group .form-control {
+        z-index: 2;
+    }
+    
+    /* Ensure button is clickable */
+    #togglePassword {
+        cursor: pointer;
+        border-left: 0;
+    }
+    
+    #togglePassword:hover {
+        background-color: #e9ecef;
+    }
+    
+    #togglePassword:focus {
+        outline: 2px solid #0d6efd;
+        outline-offset: 2px;
+    }
+    
+    /* Loading state for submit button */
+    .btn:disabled {
+        opacity: 0.8;
+        cursor: not-allowed;
+    }
+    
+    /* Smooth transitions for validation states */
+    .form-control {
+        transition: all 0.3s ease;
+    }
+    
+    .form-control.is-valid {
+        border-color: #198754;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='m2.3 6.73.94-.94 2.94-2.94-1.38-1.38L2.3 4.01l-.94-.94L0 4.43z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+    
+    .form-control.is-valid:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+    }
+    
+    /* Animation for real-time validation */
+    .invalid-feedback {
+        animation: slideDown 0.3s ease;
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
 <script>
-    $(document).ready(function() {
-        // Toggle password visibility
-        $('#togglePassword').on('click', function() {
-            const passwordInput = $('#password');
-            const type = passwordInput.attr('type') === 'password' ? 'text' : 'password';
-            passwordInput.attr('type', type);
-            $(this).find('i').toggleClass('fa-eye fa-eye-slash');
+    // Kiểm tra jQuery có sẵn không
+    if (typeof jQuery === 'undefined') {
+        console.error('jQuery not loaded!');
+        
+        // Fallback với vanilla JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Using vanilla JS fallback...');
+            
+            const usernameField = document.getElementById('username');
+            const passwordField = document.getElementById('password');
+            
+            if (usernameField) {
+                usernameField.addEventListener('input', function() {
+                    console.log('Vanilla JS: Username input changed');
+                    this.style.borderColor = this.value.length < 3 ? 'red' : 'green';
+                });
+            }
+            
+            if (passwordField) {
+                passwordField.addEventListener('input', function() {
+                    console.log('Vanilla JS: Password input changed');
+                    this.style.borderColor = this.value.length < 6 ? 'red' : 'green';
+                });
+            }
         });
         
-        // Khởi tạo validation cho form đăng nhập
-        $('#loginForm').validate({
-            // Quy tắc validation
-            rules: {
-                username: {
-                    required: true
-                },
-                password: {
-                    required: true
-                }
-            },
+        alert('jQuery không được tải. Đang sử dụng fallback validation.');
+    } else {
+        console.log('jQuery loaded successfully, version:', jQuery.fn.jquery);
+    }
+    
+    $(document).ready(function() {
+        console.log('Document ready, initializing login form...');
+        
+        // Test jQuery selectors
+        console.log('Username field found:', $('#username').length);
+        console.log('Password field found:', $('#password').length);
+        console.log('Form found:', $('#loginForm').length);
+        
+        // Initialize password toggle button
+        $('#togglePassword').attr('aria-label', 'Hiện mật khẩu');
+        
+        // Toggle password visibility function
+        function togglePasswordVisibility() {
+            const passwordInput = $('#password');
+            const toggleIcon = $('#togglePasswordIcon');
+            const currentType = passwordInput.attr('type');
             
-            // Thông báo lỗi tùy chỉnh
-            messages: {
-                username: {
-                    required: 'Vui lòng nhập tên đăng nhập'
-                },
-                password: {
-                    required: 'Vui lòng nhập mật khẩu'
-                }
-            },
-            
-            // Xử lý khi form hợp lệ
-            submitHandler: function(form) {
-                // Ẩn thông báo lỗi từ server
-                $('#serverErrors').addClass('d-none');
-                $('#errorList').empty();
-                
-                // Lấy dữ liệu form
-                const formData = $(form).serializeArray();
-                const data = {};
-                formData.forEach(item => {
-                    data[item.name] = item.value;
-                });
-                
-                // Gửi request AJAX
-                $.ajax({
-                    url: '/api/auth/login',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(data),
-                    headers: {
-                        'CSRF-Token': $('input[name="_csrf"]').val()
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            window.location.href = '/';
-                        } else {
-                            handleServerErrors(response);
-                        }
-                    },
-                    error: function(xhr) {
-                        try {
-                            const response = JSON.parse(xhr.responseText);
-                            handleServerErrors(response);
-                        } catch (e) {
-                            showAlert('danger', 'Đã xảy ra lỗi. Vui lòng thử lại sau.');
-                        }
-                    }
-                });
-                
-                return false; // Ngăn form submit mặc định
+            if (currentType === 'password') {
+                passwordInput.attr('type', 'text');
+                toggleIcon.removeClass('fa-eye').addClass('fa-eye-slash');
+                $('#togglePassword').attr('aria-label', 'Ẩn mật khẩu');
+            } else {
+                passwordInput.attr('type', 'password');
+                toggleIcon.removeClass('fa-eye-slash').addClass('fa-eye');
+                $('#togglePassword').attr('aria-label', 'Hiện mật khẩu');
             }
+        }
+        
+        // Toggle password visibility - multiple event listeners for reliability
+        $('#togglePassword').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            togglePasswordVisibility();
+        });
+        
+        // Fallback event listener
+        $(document).on('click', '#togglePassword', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            togglePasswordVisibility();
+        });
+        
+        // Touch events for mobile devices
+        $('#togglePassword').on('touchstart', function(e) {
+            e.preventDefault();
+            togglePasswordVisibility();
+        });
+        
+        // Real-time validation functions
+        function validateUsername(value) {
+            const errors = [];
+            
+            if (!value || value.trim() === '') {
+                errors.push('Tên đăng nhập không được để trống');
+            } else {
+                // Sanitize input
+                value = value.trim();
+                
+                if (value.length < 3) {
+                    errors.push('Tên đăng nhập phải có ít nhất 3 ký tự');
+                }
+                if (value.length > 50) {
+                    errors.push('Tên đăng nhập không được vượt quá 50 ký tự');
+                }
+                if (!/^[a-zA-Z0-9_]+$/.test(value)) {
+                    errors.push('Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới');
+                }
+            }
+            
+            return errors;
+        }
+        
+        function validatePassword(value) {
+            const errors = [];
+            
+            if (!value || value.trim() === '') {
+                errors.push('Mật khẩu không được để trống');
+            } else if (value.length < 6) {
+                errors.push('Mật khẩu phải có ít nhất 6 ký tự');
+            }
+            
+            return errors;
+        }
+        
+        function showFieldError(fieldId, errors) {
+            console.log(`=== showFieldError called for ${fieldId} ===`);
+            console.log('Errors:', errors);
+            
+            const field = $('#' + fieldId);
+            console.log('Field found:', field.length);
+            
+            const feedback = field.closest('.input-group').length > 0 
+                ? field.closest('.input-group').next('.invalid-feedback')
+                : field.next('.invalid-feedback');
+            console.log('Feedback element found:', feedback.length);
+            console.log('Feedback element:', feedback.get(0));
+            
+            if (errors.length > 0) {
+                console.log(`Adding error classes and text for ${fieldId}`);
+                field.addClass('is-invalid').removeClass('is-valid');
+                feedback.text(errors[0]).show();
+                console.log(`Field classes after error:`, field.attr('class'));
+                console.log(`Feedback visibility:`, feedback.is(':visible'));
+                console.log(`Feedback text:`, feedback.text());
+            } else {
+                console.log(`Removing error classes for ${fieldId}`);
+                field.removeClass('is-invalid').addClass('is-valid');
+                feedback.hide();
+                console.log(`Field classes after success:`, field.attr('class'));
+            }
+            console.log(`=== End showFieldError for ${fieldId} ===`);
+        }
+        
+        // Debounce function để tránh validate quá nhiều lần
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        // Real-time validation event listeners với debounce
+        const debouncedUsernameValidation = debounce(function(value) {
+            const errors = validateUsername(value);
+            showFieldError('username', errors);
+        }, 300);
+        
+        const debouncedPasswordValidation = debounce(function(value) {
+            const errors = validatePassword(value);
+            showFieldError('password', errors);
+        }, 300);
+        
+        // Simplified real-time validation for username
+        $('#username').on('input', function() {
+            const value = $(this).val();
+            console.log('Username input event triggered, value:', value);
+            
+            // Validate immediately for testing
+            const errors = validateUsername(value);
+            showFieldError('username', errors);
+        }).on('blur', function() {
+            const value = $(this).val();
+            console.log('Username blur event triggered, value:', value);
+            const errors = validateUsername(value);
+            showFieldError('username', errors);
+        });
+        
+        // Simplified real-time validation for password
+        $('#password').on('input', function() {
+            const value = $(this).val();
+            console.log('Password input event triggered, length:', value.length);
+            
+            // Validate immediately for testing
+            const errors = validatePassword(value);
+            showFieldError('password', errors);
+        }).on('blur', function() {
+            const value = $(this).val();
+            console.log('Password blur event triggered, length:', value.length);
+            const errors = validatePassword(value);
+            showFieldError('password', errors);
+        });
+        
+        // Remove validation errors when user starts typing
+        $('#username, #password').on('focus', function() {
+            // Chỉ xóa lỗi nếu chưa có giá trị hợp lệ
+            const hasError = $(this).hasClass('is-invalid');
+            if (hasError) {
+                $(this).removeClass('is-invalid');
+                const feedback = $(this).closest('.input-group').length > 0 
+                    ? $(this).closest('.input-group').next('.invalid-feedback')
+                    : $(this).next('.invalid-feedback');
+                feedback.hide();
+            }
+        });
+        
+        // Custom form validation and submission
+        $('#loginForm').on('submit', function(e) {
+            e.preventDefault(); // Luôn ngăn submit mặc định
+            
+            // Kiểm tra validation trước khi submit
+            const username = $('#username').val();
+            const password = $('#password').val();
+            
+            const usernameErrors = validateUsername(username);
+            const passwordErrors = validatePassword(password);
+            
+            // Hiển thị lỗi validation
+            showFieldError('username', usernameErrors);
+            showFieldError('password', passwordErrors);
+            
+            // Nếu có lỗi validation, không cho phép submit
+            if (usernameErrors.length > 0 || passwordErrors.length > 0) {
+                console.log('Validation failed:', { usernameErrors, passwordErrors });
+                return false;
+            }
+            
+            console.log('Validation passed, submitting form...');
+            
+            // Vô hiệu hóa nút submit để tránh double-click
+            $('#loginButton').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang đăng nhập...');
+            
+            // Ẩn thông báo lỗi từ server
+            $('#serverErrors').addClass('d-none');
+            $('#errorList').empty();
+            
+            // Sanitize và chuẩn bị dữ liệu
+            const sanitizedData = {
+                username: username.trim(),
+                password: password,
+                rememberMe: $('#rememberMe').is(':checked'),
+                _csrf: $('input[name="_csrf"]').val()
+            };
+            
+            console.log('Sending AJAX request with data:', sanitizedData);
+            
+            // Gửi request AJAX
+            $.ajax({
+                url: '/api/auth/login',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(sanitizedData),
+                headers: {
+                    'CSRF-Token': $('input[name="_csrf"]').val()
+                },
+                success: function(response) {
+                    console.log('AJAX success:', response);
+                    if (response.success) {
+                        $('#loginButton').html('<i class="fas fa-check"></i> Đăng nhập thành công!');
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 500);
+                    } else {
+                        handleServerErrors(response);
+                        $('#loginButton').prop('disabled', false).html('<i class="fas fa-sign-in-alt"></i> Đăng nhập');
+                    }
+                },
+                error: function(xhr) {
+                    console.log('AJAX error:', xhr);
+                    $('#loginButton').prop('disabled', false).html('<i class="fas fa-sign-in-alt"></i> Đăng nhập');
+                    
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        handleServerErrors(response);
+                    } catch (e) {
+                        showAlert('danger', 'Đã xảy ra lỗi. Vui lòng thử lại sau.');
+                    }
+                }
+            });
+            
+            return false; // Ngăn form submit mặc định
         });
         
         // Xử lý lỗi từ server
@@ -190,5 +471,32 @@
                 setTimeout(() => alert.remove(), 150);
             }, 5000);
         }
+        
+        // Test validation functions
+        console.log('Testing validation functions...');
+        console.log('Empty username validation:', validateUsername(''));
+        console.log('Valid username validation:', validateUsername('testuser'));
+        console.log('Empty password validation:', validatePassword(''));
+        console.log('Valid password validation:', validatePassword('123456'));
+        
+        // Test UI validation immediately
+        console.log('=== Testing UI validation ===');
+        setTimeout(() => {
+            console.log('Testing empty username validation...');
+            showFieldError('username', ['Test error message for username']);
+            
+            console.log('Testing empty password validation...');
+            showFieldError('password', ['Test error message for password']);
+            
+            // Test if we can manually add classes
+            setTimeout(() => {
+                console.log('Manually testing CSS classes...');
+                $('#username').addClass('is-invalid');
+                $('#username').next('.invalid-feedback').text('Manual test error').show();
+                
+                $('#password').addClass('is-invalid');
+                $('#password').closest('.input-group').next('.invalid-feedback').text('Manual password error').show();
+            }, 2000);
+        }, 500);
     });
 </script>

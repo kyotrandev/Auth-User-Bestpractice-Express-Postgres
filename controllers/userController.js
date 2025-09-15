@@ -74,7 +74,7 @@ class UserController {
     static async login(req, res) {
         try {
             const { username, password } = req.body;
-
+            console.log("Req:", username, password);
             // Tìm user theo username
             const user = await User.findByUsername(username);
             if (!user) {
@@ -83,6 +83,8 @@ class UserController {
                     message: 'Tên đăng nhập hoặc mật khẩu không đúng'
                 });
             }
+
+            // console.log(user);
 
             // Kiểm tra account có bị khóa không
             const isLocked = await User.isAccountLocked(user.id);

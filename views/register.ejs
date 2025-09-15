@@ -20,9 +20,9 @@
                         <div class="mb-3">
                             <label for="username" class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="username" name="username" required
-                                minlength="12" maxlength="25" pattern="^[a-zA-Z][a-zA-Z0-9_-]{11,24}$">
+                                minlength="12" maxlength="25">
                                 <div class="form-text">
-                                    Từ 12-25 ký tự, bắt đầu bằng chữ cái, chỉ chứa chữ cái, số, gạch ngang và gạch dưới
+                                    Từ 12-25 ký tự, bắt đầu bằng chữ cái, chỉ chứa chữ cái, số, gạch ngang và gạch dưới (không cho phép dấu chấm)
                                 </div>
                                 <div class="invalid-feedback"></div>
                         </div>
@@ -39,13 +39,13 @@
                             <label for="password" class="form-label">Mật khẩu <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <input type="password" class="form-control" id="password" name="password" required
-                                    minlength="12" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$">
+                                    minlength="12">
                                     <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                                         <i class="fas fa-eye"></i>
                                     </button>
                             </div>
                             <div class="form-text">
-                                Ít nhất 12 ký tự, bao gồm: chữ hoa, chữ thường, số và ký tự đặc biệt
+                                Ít nhất 12 ký tự, bao gồm: chữ hoa, chữ thường, số và ký tự đặc biệt (cho phép , ' " .)
                             </div>
                             <div class="invalid-feedback"></div>
 
@@ -73,8 +73,7 @@
                         <!-- Số điện thoại -->
                         <div class="mb-3">
                             <label for="phone" class="form-label">Số điện thoại</label>
-                            <input type="tel" class="form-control" id="phone" name="phone"
-                                pattern="^(\+84|0)[35789][0-9]{8}$" maxlength="20">
+                            <input type="tel" class="form-control" id="phone" name="phone" maxlength="20">
                                 <div class="form-text">Ví dụ: 0901234567 hoặc +84901234567</div>
                                 <div class="invalid-feedback"></div>
                         </div>

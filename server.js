@@ -20,34 +20,36 @@ const PORT = process.env.PORT || 3000;
 let dbConnected = false;
 
 // Security middleware
-const isDev = process.env.NODE_ENV !== 'production';
 app.use(helmet({
     contentSecurityPolicy: {
-        useDefaults: true,
         directives: {
             defaultSrc: ["'self'"],
-            // Allow CDN scripts and inline scripts for EJS inline handlers in dev
             scriptSrc: [
-                "'self'",
-                ...(isDev ? ["'unsafe-inline'", "'unsafe-eval'"] : []),
-                'https://code.jquery.com',
-                'https://cdn.jsdelivr.net',
-                'https://cdnjs.cloudflare.com'
+                "'self'", 
+                "'unsafe-inline'", // Allow inline scripts
+                "https://code.jquery.com",
+                "https://cdn.jsdelivr.net",
+                "https://cdnjs.cloudflare.com"
             ],
             styleSrc: [
-                "'self'",
-                ...(isDev ? ["'unsafe-inline'"] : []),
-                'https://cdn.jsdelivr.net',
-                'https://cdnjs.cloudflare.com'
+                "'self'", 
+                "'unsafe-inline'", // Allow inline styles
+                "https://cdn.jsdelivr.net",
+                "https://cdnjs.cloudflare.com"
             ],
-            imgSrc: ["'self'", 'data:', 'blob:'],
-            fontSrc: ["'self'", 'https://cdnjs.cloudflare.com', 'https://cdn.jsdelivr.net', 'data:'],
-            connectSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
-            objectSrc: ["'none'"],
-            baseUri: ["'self'"]
+            fontSrc: [
+                "'self'",
+                "https://cdnjs.cloudflare.com"
+            ],
+            imgSrc: ["'self'", "data:", "https:"],
+            connectSrc: [
+                "'self'",
+                "https://cdn.jsdelivr.net",
+                "https://cdnjs.cloudflare.com",
+                "https://code.jquery.com"
+            ]
         }
-    },
-    crossOriginResourcePolicy: { policy: 'cross-origin' }
+    }
 }));
 app.use(cors());
 
@@ -64,8 +66,8 @@ const authLimiter = rateLimit({
     message: 'Quá nhiều lần đăng nhập thất bại, vui lòng thử lại sau 15 phút.'
 });
 
-// app.use(limiter);
-// app.use('/api/auth', authLimiter);
+app.use(limiter);
+app.use('/api/auth', authLimiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -103,7 +105,7 @@ app.use(csrfProtection);
 
 // Routes
 app.use('/api', userRoutes);
-app.use('/admin', adminRoutes); // Mount admin routes với prefix /admin
+app.use('/api/admin', adminRoutes);
 
 
 // Serve HTML pages
@@ -158,14 +160,62 @@ app.get('/profile', (req, res) => {
     });
 });
 
-// Trang dashboard admin
-app.get('/admin', (req, res) => {
+// Trang quản lý người dùng (Admin)
+app.get('/admin/users', (req, res) => {
     if (!req.session.user) {
         return res.redirect('/login');
     }
-    res.redirect('/admin/dashboard');
+    res.render('admin/users', { 
+        user: req.session.user,
+        csrfToken: req.csrfToken(),
+        title: 'Quản lý người dùng'
+    });
 });
 
+// Trang quản lý sách (Thủ thư)
+app.get('/books/manage', (req, res) => {
+    if (!req.session.user) {
+        return res.redirect('/login');
+    }
+    res.render('books/manage', { 
+        user: req.session.user,
+        csrfToken: req.csrfToken(),
+        title: 'Quản lý sách'
+    });
+});
+
+// Trang danh sách sách (Public)
+app.get('/books', (req, res) => {
+    res.render('books/index', { 
+        user: req.session.user,
+        csrfToken: req.csrfToken(),
+        title: 'Danh sách sách'
+    });
+});
+
+// Trang phiếu mượn sách (User)
+app.get('/borrow', (req, res) => {
+    if (!req.session.user) {
+        return res.redirect('/login');
+    }
+    res.render('borrow/index', { 
+        user: req.session.user,
+        csrfToken: req.csrfToken(),
+        title: 'Phiếu mượn sách'
+    });
+});
+
+// Trang tạo phiếu mượn mới
+app.get('/borrow/create', (req, res) => {
+    if (!req.session.user) {
+        return res.redirect('/login');
+    }
+    res.render('borrow/create', { 
+        user: req.session.user,
+        csrfToken: req.csrfToken(),
+        title: 'Tạo phiếu mượn'
+    });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

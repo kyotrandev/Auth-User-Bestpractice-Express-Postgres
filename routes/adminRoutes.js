@@ -101,27 +101,11 @@ const validatePagination = [
 // Routes quản lý người dùng
 
 /**
- * @route   GET /admin/users
- * @desc    Hiển thị giao diện quản lý người dùng
+ * @route   GET /api/admin/users
+ * @desc    Lấy danh sách tất cả người dùng
  * @access  Admin only
  */
 router.get('/users', 
-    requireAdmin,
-    (req, res) => {
-        res.render('admin/users', {
-            title: 'Quản lý người dùng',
-            user: req.session.user,
-            csrfToken: req.csrfToken()
-        });
-    }
-);
-
-/**
- * @route   GET /api/admin/users
- * @desc    Lấy danh sách tất cả người dùng (API)
- * @access  Admin only
- */
-router.get('/api/users', 
     requireAdmin,
     validatePagination,
     AdminController.getAllUsers
@@ -132,7 +116,7 @@ router.get('/api/users',
  * @desc    Lấy thông tin chi tiết một người dùng
  * @access  Admin only
  */
-router.get('/api/users/:id', 
+router.get('/users/:id', 
     requireAdmin,
     validateUserId,
     AdminController.getUserById
@@ -143,7 +127,7 @@ router.get('/api/users/:id',
  * @desc    Tạo người dùng mới
  * @access  Admin only
  */
-router.post('/api/users', 
+router.post('/users', 
     requireAdmin,
     validateCreateUser,
     AdminController.createUser
@@ -154,7 +138,7 @@ router.post('/api/users',
  * @desc    Cập nhật thông tin người dùng
  * @access  Admin only
  */
-router.put('/api/users/:id', 
+router.put('/users/:id', 
     requireAdmin,
     validateUserId,
     validateUpdateUser,
@@ -166,7 +150,7 @@ router.put('/api/users/:id',
  * @desc    Xóa người dùng (soft delete)
  * @access  Admin only
  */
-router.delete('/api/users/:id', 
+router.delete('/users/:id', 
     requireAdmin,
     validateUserId,
     AdminController.deleteUser
@@ -177,7 +161,7 @@ router.delete('/api/users/:id',
  * @desc    Đặt lại mật khẩu cho người dùng
  * @access  Admin only
  */
-router.post('/api/users/:id/reset-password', 
+router.post('/users/:id/reset-password', 
     requireAdmin,
     validateUserId,
     validateResetPassword,
@@ -189,7 +173,7 @@ router.post('/api/users/:id/reset-password',
  * @desc    Mở khóa tài khoản người dùng
  * @access  Admin only
  */
-router.post('/api/users/:id/unlock', 
+router.post('/users/:id/unlock', 
     requireAdmin,
     validateUserId,
     AdminController.unlockUser
@@ -202,7 +186,7 @@ router.post('/api/users/:id/unlock',
  * @desc    Lấy danh sách vai trò
  * @access  Admin only
  */
-router.get('/api/roles', 
+router.get('/roles', 
     requireAdmin,
     AdminController.getAllRoles
 );
@@ -212,7 +196,7 @@ router.get('/api/roles',
  * @desc    Lấy danh sách quyền
  * @access  Admin only
  */
-router.get('/api/permissions', 
+router.get('/permissions', 
     requireAdmin,
     AdminController.getAllPermissions
 );
@@ -220,27 +204,11 @@ router.get('/api/permissions',
 // Routes thống kê
 
 /**
- * @route   GET /admin/dashboard
- * @desc    Hiển thị dashboard admin
- * @access  Admin only
- */
-router.get('/dashboard', 
-    requireAdmin,
-    (req, res) => {
-        res.render('admin/dashboard', {
-            title: 'Dashboard Admin',
-            user: req.session.user,
-            csrfToken: req.csrfToken()
-        });
-    }
-);
-
-/**
  * @route   GET /api/admin/statistics
  * @desc    Lấy thống kê hệ thống
  * @access  Admin only
  */
-router.get('/api/statistics', 
+router.get('/statistics', 
     requireAdmin,
     AdminController.getSystemStatistics
 );
